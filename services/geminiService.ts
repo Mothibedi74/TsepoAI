@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, Modality } from '@google/genai';
 import type { Product } from '../types';
 
 function getAiInstance() {
@@ -8,12 +8,12 @@ function getAiInstance() {
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
 }
 
-type GeneratedProductDetails = Omit<Product, 'id' | 'imageUrl'> & { imageQuery: string };
+type GeneratedProductDetails = Omit<Product, 'id'>;
 
 export async function generateProductDetails(productIdea: string): Promise<GeneratedProductDetails> {
   try {
     const ai = getAiInstance();
-    const prompt = `You are a marketing expert for a no-code product showcase. A user has provided a product idea: "${productIdea}".
+    const textPrompt = `You are a marketing expert for a no-code product showcase. A user has provided a product idea: "${productIdea}".
     Your task is to generate a compelling product listing based on this idea.
     
     Please provide:
@@ -24,10 +24,9 @@ export async function generateProductDetails(productIdea: string): Promise<Gener
     - A placeholder PayPal URL.
     - A short phrase for a representative stock photo.`;
 
-    const response = await ai.models.generateContent({
+    const textResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
-      // FIX: Using responseSchema to ensure valid JSON output, per @google/genai guidelines.
+      contents: textPrompt,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -66,21 +65,53 @@ export async function generateProductDetails(productIdea: string): Promise<Gener
       },
     });
     
-    const productData = JSON.parse(response.text.trim());
+    const productTextData = JSON.parse(textResponse.text.trim());
     
     if (
-      !productData.name ||
-      !productData.description ||
-      !productData.price ||
-      !productData.priceType ||
-      !productData.purchaseUrl ||
-      !productData.imageQuery ||
-      (productData.priceType !== 'LTD' && productData.priceType !== 'Subscription')
+      !productTextData.name ||
+      !productTextData.description ||
+      !productTextData.price ||
+      !productTextData.priceType ||
+      !productTextData.purchaseUrl ||
+      !productTextData.imageQuery ||
+      (productTextData.priceType !== 'LTD' && productTextData.priceType !== 'Subscription')
     ) {
-        throw new Error("AI response was not in the expected format.");
+        throw new Error("AI response for product details was not in the expected format.");
     }
 
-    return productData;
+    // Step 2: Generate an image based on the text prompt
+    const imageResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+            parts: [{ text: `A professional, clean, and modern product image for a website showcase. The product is related to: ${productTextData.imageQuery}. Studio lighting, minimalist background.` }],
+        },
+        config: {
+            responseModalities: [Modality.IMAGE],
+        },
+    });
+
+    let imageUrl = '';
+    const firstCandidate = imageResponse.candidates?.[0];
+    if (firstCandidate?.content?.parts) {
+        for (const part of firstCandidate.content.parts) {
+            if (part.inlineData) {
+                const base64ImageBytes: string = part.inlineData.data;
+                imageUrl = `data:image/png;base64,${base64ImageBytes}`;
+                break; 
+            }
+        }
+    }
+
+    if (!imageUrl) {
+        throw new Error("AI failed to generate an image.");
+    }
+    
+    const { imageQuery, ...restOfProductData } = productTextData;
+
+    return {
+        ...restOfProductData,
+        imageUrl,
+    };
 
   } catch (error) {
     console.error("Error generating product details from Gemini:", error);

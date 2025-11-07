@@ -1,11 +1,12 @@
 import React from 'react';
-import Logo from './ConfigPanel';
+import Logo from './Logo';
 
 interface HeaderProps {
     onAdminClick: () => void;
+    isAdmin: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAdminClick }) => {
+const Header: React.FC<HeaderProps> = ({ onAdminClick, isAdmin }) => {
   return (
     <header className="bg-dark-bg/80 backdrop-blur-sm border-b border-dark-border sticky top-0 z-50">
       <div className="container mx-auto px-4 md:px-8">
@@ -16,7 +17,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminClick }) => {
             <a href="#about" className="text-gray-300 hover:text-primary transition-colors">About</a>
             <a href="#reviews" className="text-gray-300 hover:text-primary transition-colors">Reviews</a>
              <button onClick={onAdminClick} className="text-gray-300 hover:text-primary transition-colors">
-              Admin
+              {isAdmin ? 'Hide Dashboard' : 'Admin Dashboard'}
             </button>
           </nav>
         </div>
