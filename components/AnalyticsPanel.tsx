@@ -4,9 +4,10 @@ import ProductCard from './ChatPanel';
 
 interface ProductListProps {
   products: Product[];
+  onPurchase: (product: Product) => void;
 }
 
-const ProductList: React.FC<ProductListProps> = ({ products }) => {
+const ProductList: React.FC<ProductListProps> = ({ products, onPurchase }) => {
   return (
     <>
       {products.length === 0 ? (
@@ -14,7 +15,7 @@ const ProductList: React.FC<ProductListProps> = ({ products }) => {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} onPurchase={onPurchase} />
           ))}
         </div>
       )}

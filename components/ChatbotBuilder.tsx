@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusCircle, Loader, AlertCircle } from 'lucide-react';
+import { PlusCircle, Loader, AlertCircle, Upload } from 'lucide-react';
 
 interface AddProductFormProps {
   onAddProduct: (idea: string) => Promise<void>;
@@ -9,6 +9,7 @@ interface AddProductFormProps {
 
 const AddProductForm: React.FC<AddProductFormProps> = ({ onAddProduct, isLoading, error }) => {
   const [idea, setIdea] = useState('');
+  const [fileName, setFileName] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,10 +19,18 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAddProduct, isLoading
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFileName(e.target.files[0].name);
+      // TODO: Implement file import logic here.
+      // For now, it just shows the file name.
+    }
+  };
+
   return (
-    <section className="mb-16">
-      <div className="max-w-3xl mx-auto bg-dark-card border border-dark-border rounded-lg p-6 shadow-lg">
-        <h2 className="text-2xl font-bold mb-4 text-center text-white">AI Product Idea Generator</h2>
+    <div className="max-w-3xl mx-auto bg-dark-card border border-dark-border rounded-lg p-6 shadow-lg">
+        {/* AI Product Generator */}
+        <h3 className="text-2xl font-bold mb-4 text-center text-white">AI Product Idea Generator</h3>
         <p className="text-center text-gray-400 mb-6">Enter a product name or idea, and let AI create a complete listing for you.</p>
         <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-4">
           <input
@@ -57,8 +66,19 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAddProduct, isLoading
                 <p>{error}</p>
             </div>
         )}
-      </div>
-    </section>
+
+        {/* File Import Section */}
+        <div className="border-t border-dark-border my-8"></div>
+        <h3 className="text-2xl font-bold mb-4 text-center text-white">Import Existing App</h3>
+        <p className="text-center text-gray-400 mb-6">Upload a configuration file to add a new app to the catalog.</p>
+        <div className="flex justify-center">
+            <label className="flex items-center justify-center bg-dark-bg border-2 border-dashed border-dark-border text-gray-400 font-bold py-3 px-6 rounded-lg cursor-pointer hover:bg-dark-border hover:text-white transition-colors">
+                <Upload className="w-5 h-5 mr-2" />
+                <span>{fileName || 'Choose a file...'}</span>
+                <input type="file" className="hidden" onChange={handleFileChange} />
+            </label>
+        </div>
+    </div>
   );
 };
 
